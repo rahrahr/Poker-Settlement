@@ -1,0 +1,1 @@
+Use a naive greedy algorithm for settling poker ledger. Support Wepoker and Pokernow exported ledger.
