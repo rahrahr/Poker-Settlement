@@ -1,6 +1,7 @@
-from read_files import read_file
+from read_files import read_file, read_folder
 import bisect
 import sys
+import os
 import pandas as pd
 
 def get_suggestion(df):
@@ -27,10 +28,15 @@ def get_suggestion(df):
     return df
 
 def main():
-    filepath = sys.argv[1]
-    df = read_file(filepath)
+    path = sys.argv[1]
+    if os.path.isfile(path):
+        df = read_file(path)
+
+    elif os.path.isdir(path):
+        df = read_folder(path)
+
     df = get_suggestion(df)
-    df.to_csv('suggestion.csv')
+    df.to_csv('suggestion.csv', encoding='gbk')
 
 if __name__ == '__main__':
     main()
