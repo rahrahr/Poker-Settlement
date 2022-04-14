@@ -18,6 +18,8 @@ def get_suggestion(df):
         top_winner_name = top_winner[-1]
 
         bisect.insort(list_of_entries, top_winner)
+        if transfer_amount == 0:
+            return greedy_settle(list_of_entries[1:])
         return greedy_settle(list_of_entries[1:]) + [(top_loser[-1], f'To {top_winner_name}:{transfer_amount}')]
 
     suggestion = greedy_settle(entries)
