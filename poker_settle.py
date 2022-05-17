@@ -5,9 +5,11 @@ import os
 import pandas as pd
 
 def get_suggestion(df):
+    df = df[df['pnl'] != 0]
     entries = sorted(x.to_list()[::-1] for _, x in df.iterrows())
     def greedy_settle(list_of_entries):
-        # match the biggest loser to the biggest winner
+        # match the biggest loser to the biggest winner.
+        # Could be made faster using SortedList.
         if not list_of_entries or len(list_of_entries) == 1:
             return []
 
@@ -35,10 +37,12 @@ def main():
         df = read_file(path)
 
     elif os.path.isdir(path):
+        print('Number of Games:', len([x for x in os.listdir(path) if x[-3:] == 'csv' or x[-4:] == 'xlsx']))
         df = read_folder(path)
 
     df = get_suggestion(df)
-    df.to_csv('suggestion.csv', encoding='gbk')
-
+    df.to_excel('suggestion.xlsx', encoding='gbk')
+    print(df.to_markdown())
+    
 if __name__ == '__main__':
     main()
