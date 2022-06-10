@@ -51,6 +51,8 @@ def read_pokernow_file(filename):
 
 def merge_user(names, special_names='./special_name_mapping.json'):
     # merge usernames that are substring of each other.
+    names = [x.lower() for x in names]
+
     if special_names:
         assert os.path.exists(special_names), 'Special Names Dictionary does not exists!'
         special_names_dict = json.load(open(special_names))
@@ -63,10 +65,20 @@ def merge_user(names, special_names='./special_name_mapping.json'):
             name = special_names_dict[name]
 
         for temp_name in names:
-            if temp_name == name[:len(temp_name)]:
+            if temp_name == name[:len(temp_name)] and len(temp_name) < len(name):
+                special_names_dict[name] = temp_name
                 names[i] = temp_name
-            
-            if name.isascii() and temp_name.isascii()\
-                and temp_name.lower() == name.lower()[:len(temp_name)]:
-                names[i] = temp_name.lower()
+
+        if names[i] in special_names_dict:
+            names[i] = special_names_dict[names[i]]
+        
+        special_names_dict[name] = names[i]
+    
+    if os.path.exists('copy.json'):
+        old_map = json.load(open('copy.json'))
+        old_map.update(special_names_dict)
+        json.dump(old_map, open('copy.json', 'w'))
+    else:
+        json.dump(special_names_dict, open('copy.json', 'w'))
+
     return names
