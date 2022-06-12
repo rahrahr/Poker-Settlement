@@ -270,7 +270,8 @@ class Parser:
             pass
         elif "enqueued" in line:
             pass
-        
+        elif "spectator" in line:
+            pass
         elif "requested a seat" in line:
             pass
         elif "canceled the seat request" in line:
@@ -495,7 +496,6 @@ def compute_stats(evening, args):
     win_stats.print()
     preflop_stats.print()
     # evening.plot_progression()
-    # hand_variance(evening)
 
 
 def main():
