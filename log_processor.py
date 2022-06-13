@@ -149,7 +149,7 @@ class Round:
     @staticmethod
     def find_moves(player, action_name, moves):
         return [move for move in moves if (move.player == player and move.action_name == action_name)]
-
+        
     @staticmethod
     def money_in_round(moves):
         """
@@ -171,6 +171,16 @@ class Round:
 
         return spent
 
+    def action_list(self, street):
+        if street == 'preflop':
+            return [action.action_name for action in self.preflop_moves]
+        elif street == 'flop':
+            return [action.action_name for action in self.flop_moves]
+        elif street == 'turn':
+            return [action.action_name for action in self.turn_moves]
+        elif street == 'river':
+            return [action.action_name for action in self.river_moves]
+            
     def total_money_in_round(self):
         return sum(self.money_spent().values())
 

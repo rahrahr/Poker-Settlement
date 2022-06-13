@@ -60,12 +60,10 @@ for line in txt_file[2:]:
         player_stats[current_player][property_name.strip()] = value.strip()
 
 df = pd.DataFrame(player_stats).T
-df = df.reindex(columns=['VPIP', 'Win Rate', 'Showdown win rate',
-                         '# wins (median)', '%    showdown (median)', '% preshowdown (median)',
-                         'Avg Raise Amount', 'Avg 3-Bet Amount', 'PFR', 
-                         '3BET', '% limped', '# of Hands'])
-
 df['pnl'] = pd.read_excel('suggestion.xlsx', index_col='player')['pnl']
-df['bb/hh'] = df['pnl'] / df['# of Hands'].astype(int) * 100 / 20
+df['bb/hh'] = df['pnl'] / df['# of Hands'].astype(float) * 100 / 20
 df = df.sort_values('bb/hh', ascending=False)
+columns_reordered = [x for x in df.columns if x not in ('# of Hands', 'pnl', 'bb/hh')] + ['# of Hands', 'pnl', 'bb/hh']
+
+df = df.reindex(columns=columns_reordered)
 df.to_excel('player_stats.xlsx')

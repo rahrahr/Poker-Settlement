@@ -27,11 +27,15 @@ class WinStats:
         showdown_wins = self.showdown_wins
         preshowdown_wins = self.preshowdown_wins
 
-        print(colored("Win Stats (Where did your money come from?)", "white", attrs=["underline"]))
+        print(colored("Win Stats (Where did your money come from?)",
+                      "white", attrs=["underline"]))
         for player in self.evening.players.keys():
-            num_wins = len(showdown_wins[player]) + len(preshowdown_wins[player])
-            pct_at_showdown = safe_div(len(showdown_wins[player]),  num_wins ) * 100
-            pct_at_preshowdown = safe_div(len(preshowdown_wins[player]), num_wins ) * 100
+            num_wins = len(showdown_wins[player]) + \
+                len(preshowdown_wins[player])
+            pct_at_showdown = safe_div(
+                len(showdown_wins[player]),  num_wins) * 100
+            pct_at_preshowdown = safe_div(
+                len(preshowdown_wins[player]), num_wins) * 100
             win_amts = showdown_wins[player] + preshowdown_wins[player]
 
             median_win_amt = median(win_amts)
@@ -39,9 +43,12 @@ class WinStats:
             median_preshowdown_amt = median(preshowdown_wins[player])
 
             print(colored(f"  {player}", "white", attrs=["bold"]))
-            print(f"    # wins (median): {num_wins:>2} ({median_win_amt:0.0f})")
-            print(f"       %    showdown (median): {pct_at_showdown:>6.2f}% ({median_showdown_amt:0.0f})")
-            print(f"       % preshowdown (median): {pct_at_preshowdown:>6.2f}% ({median_preshowdown_amt:0.0f})")
+            print(
+                f"    # wins (median): {num_wins:>2} ({median_win_amt:0.0f})")
+            print(
+                f"       %    showdown (median): {pct_at_showdown:>6.2f}% ({median_showdown_amt:0.0f})")
+            print(
+                f"       % preshowdown (median): {pct_at_preshowdown:>6.2f}% ({median_preshowdown_amt:0.0f})")
         print()
 
 
@@ -70,16 +77,20 @@ class PlayStats:
         # % How often you saw each stage
         # % Showdowns won
 
-        print(colored("Play Stats (What happened when you played in a round?)", "white", attrs=["underline"]))
+        print(colored("Play Stats (What happened when you played in a round?)",
+                      "white", attrs=["underline"]))
         max_rounds = len(self.evening.get_rounds())
         print(f"Rounds: {max_rounds}")
         for player in self.evening.players.keys():
             total_rounds = self.rounds_present[player]
             player_wins = len(self.win_stats.wins[player])
             player_showdown_wins = len(self.win_stats.showdown_wins[player])
-            pct_played = safe_div(self.rounds_contributed[player], total_rounds) * 100
-            pct_played_wins = safe_div(player_wins, self.rounds_contributed[player]) * 100
-            pct_showdown_wins = safe_div(player_showdown_wins, self.showdowns_played[player]) * 100
+            pct_played = safe_div(
+                self.rounds_contributed[player], total_rounds) * 100
+            pct_played_wins = safe_div(
+                player_wins, self.rounds_contributed[player]) * 100
+            pct_showdown_wins = safe_div(
+                player_showdown_wins, self.showdowns_played[player]) * 100
 
             print(colored(f"  Player: {player}", "white", attrs=["bold"]))
             print(
@@ -106,18 +117,38 @@ class PreFlopStats:
         raise_rounds = defaultdict(list)
         three_bet_amts = defaultdict(list)
         three_bet_rounds = defaultdict(list)
+        four_bet_amts = defaultdict(list)
+        four_bet_rounds = defaultdict(list)
+
+        limp_face_open_rounds = defaultdict(list)
+        limp_fold_to_open_rounds = defaultdict(list)
+
+        open_face_3bet_rounds = defaultdict(list)
+        fold_to_3bet_rounds = defaultdict(list)
 
         for round in evening.get_rounds():
             preflop_amounts = round.money_in_round(round.preflop_moves)
+            limpers = set()
             for player, amt in preflop_amounts.items():
-                if amt == round.big_blind[1] and 0 == len(round.find_moves(player, "fold", round.preflop_moves)):
+                if amt == round.big_blind[1] and player in round.voluntary_contributors():
                     limp_rounds[player].append(round)
+                    limpers.add(player)
+
+            if 'raise' in round.action_list('preflop'):
+                for player in limpers:
+                    limp_face_open_rounds[player].append(round)
+
+                    if 0 != len(round.find_moves(player, 'fold', round.preflop_moves)):
+                        limp_fold_to_open_rounds[player].append(round)
 
             # In case there are multiple raises in a single round
             round_raises = {}
             round_3bets = {}
+            round_4bets = {}
             open_raise = False
             three_bet = False
+            four_bet = False
+
             for move in round.preflop_moves:
                 if move.action_name == "raise":
                     round_raises[move.player] = move.amount
@@ -126,6 +157,9 @@ class PreFlopStats:
                     elif not three_bet:
                         round_3bets[move.player] = move.amount
                         three_bet = True
+                    elif not four_bet:
+                        round_4bets[move.player] = move.amount
+                        four_bet = True
 
             for player, amt in round_raises.items():
                 raise_amts[player].append(amt)
@@ -135,23 +169,63 @@ class PreFlopStats:
                 three_bet_amts[player].append(amt)
                 three_bet_rounds[player].append(round)
 
+            for player, amt in round_4bets.items():
+                four_bet_amts[player].append(amt)
+                four_bet_rounds[player].append(round)
+
+            if three_bet:
+                for player, _ in raise_amts.items():
+                    open_face_3bet_rounds[player].append(round)
+                    if 0 != len(round.find_moves(player, 'fold', round.preflop_moves)):
+                        fold_to_3bet_rounds[player].append(round)
+
         self.limp_rounds = limp_rounds
         self.raise_amts = raise_amts
         self.raise_rounds = raise_rounds
         self.three_bet_amts = three_bet_amts
         self.three_bet_rounds = three_bet_rounds
+        self.four_bet_amts = four_bet_amts
+        self.four_bet_rounds = four_bet_rounds
+
+        self.limp_fold_to_open_rounds = limp_fold_to_open_rounds
+        self.limp_face_open_rounds = limp_face_open_rounds
+
+        self.open_face_3bet_rounds = open_face_3bet_rounds
+        self.fold_to_3bet_rounds = fold_to_3bet_rounds
 
     def print(self):
         print(colored("Preflop Behavior:", "white", attrs=["underline"]))
         for player in self.evening.players.keys():
             total_rounds = self.play_stats.rounds_present[player]
-            pct_played = safe_div(self.play_stats.rounds_contributed[player], total_rounds) * 100
-            pct_limped = safe_div(len(self.limp_rounds[player]), self.play_stats.rounds_contributed[player]) * 100
-            pct_raised = safe_div(len(self.raise_rounds[player]), total_rounds) * 100
-            pct_3bet = safe_div(len(self.three_bet_rounds[player]), total_rounds) *100
+            limp_rounds = len(self.limp_rounds[player])
+            open_rounds = len(self.raise_rounds[player])
+            limp_face_open_rounds = len(
+                self.limp_face_open_rounds[player])
+            open_face_3bet_rounds = len(self.open_face_3bet_rounds[player])
+
+            pct_played = safe_div(
+                self.play_stats.rounds_contributed[player], total_rounds) * 100
+            pct_limped = safe_div(
+                len(self.limp_rounds[player]), self.play_stats.rounds_contributed[player]) * 100
+            pct_raised = safe_div(
+                len(self.raise_rounds[player]), total_rounds) * 100
+            pct_3bet = safe_div(
+                len(self.three_bet_rounds[player]), total_rounds) * 100
+            pct_4bet = safe_div(
+                len(self.four_bet_rounds[player]), total_rounds) * 100
+            pct_limp_fold_to_open_rounds = safe_div(
+                len(self.limp_fold_to_open_rounds[player]), limp_face_open_rounds) * 100
+            pct_fold_to_3bet = safe_div(
+                len(self.fold_to_3bet_rounds[player]), open_face_3bet_rounds) * 100
+
             print(colored(f"  Player: {player}", "white", attrs=["bold"]))
-            print(f"                        Avg Raise Amount  : {avg(self.raise_amts[player]):>3.0f}")
-            print(f"                        Avg 3-Bet Amount  : {avg(self.three_bet_amts[player]):>3.0f}")
+            print(
+                f"                        Avg Raise Amount  : {avg(self.raise_amts[player]):>3.0f}")
+            print(
+                f"                        Avg 3-Bet Amount  : {avg(self.three_bet_amts[player]):>3.0f}")
+            print(
+                f"                        Avg 4-Bet Amount  : {avg(self.four_bet_amts[player]):>3.0f}")
+
             print(
                 f"   Num. Voluntary / Rounds Played  (VPIP) : "
                 f"{self.play_stats.rounds_contributed[player]:>3d} / {total_rounds:>3d} ({pct_played:>6.2f}%)")
@@ -161,6 +235,16 @@ class PreFlopStats:
             print(
                 f" Rounds 3-Bet / Rounds Present     (3BET) : "
                 f"{len(self.three_bet_rounds[player]):>3d} / {self.play_stats.rounds_present[player]:>3d} ({pct_3bet:>6.2f}%)")
+            print(
+                f" 4BET : "
+                f"{len(self.four_bet_rounds[player]):>3d} / {self.play_stats.rounds_present[player]:>3d} ({pct_4bet:>6.2f}%)")
+            print(
+                f" Limp-Fold: "
+                f"{len(self.limp_fold_to_open_rounds[player]):>3d} / {limp_face_open_rounds:>3d} ({pct_limp_fold_to_open_rounds:>6.2f}%)")
+            print(
+                f" Open-Fold: "
+                f"{len(self.fold_to_3bet_rounds[player]):>3d} / {open_face_3bet_rounds:>3d} ({pct_fold_to_3bet:>6.2f}%)")
+
             print(
                 f"Rounds Limped / Num. Voluntary (% limped) : "
                 f"{len(self.limp_rounds[player]):>3d} / {self.play_stats.rounds_contributed[player]:>3d} ({pct_limped:>6.2f}%)")
