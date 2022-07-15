@@ -115,8 +115,12 @@ class PreFlopStats:
         limp_rounds = defaultdict(list)
         raise_amts = defaultdict(list)
         raise_rounds = defaultdict(list)
+
+        face_raise_rounds = defaultdict(list)
         three_bet_amts = defaultdict(list)
         three_bet_rounds = defaultdict(list)
+
+        face_three_bet_rounds = defaultdict(list)
         four_bet_amts = defaultdict(list)
         four_bet_rounds = defaultdict(list)
 
@@ -173,8 +177,12 @@ class PreFlopStats:
                 four_bet_amts[player].append(amt)
                 four_bet_rounds[player].append(round)
 
+            if three_bet and not three_bet:
+                for player, amt in preflop_amounts.items():
+                    face_raise_rounds[player].append(round)
+
             if three_bet:
-                for player, _ in raise_amts.items():
+                for player, _ in round_raises.items():
                     open_face_3bet_rounds[player].append(round)
                     if 0 != len(round.find_moves(player, 'fold', round.preflop_moves)):
                         fold_to_3bet_rounds[player].append(round)

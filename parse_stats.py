@@ -61,9 +61,9 @@ for line in txt_file[2:]:
 
 df = pd.DataFrame(player_stats).T
 df['pnl'] = pd.read_excel('suggestion.xlsx', index_col='player')['pnl']
-df['bb/hh'] = df['pnl'] / df['# of Hands'].astype(float) * 100 / 20
-df = df.sort_values('bb/hh', ascending=False)
-columns_reordered = [x for x in df.columns if x not in ('# of Hands', 'pnl', 'bb/hh')] + ['# of Hands', 'pnl', 'bb/hh']
+df['pnl/hh'] = df['pnl'] / df['# of Hands'].astype(float) * 100
+df = df.sort_values('pnl/hh', ascending=False)
+columns_reordered = [x for x in df.columns if x not in ('# of Hands', 'pnl', 'pnl/hh')] + ['# of Hands', 'pnl', 'pnl/hh']
 
 df = df.reindex(columns=columns_reordered)
 df.to_excel('player_stats.xlsx')

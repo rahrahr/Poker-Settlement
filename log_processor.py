@@ -6,6 +6,7 @@ import argparse
 from typing import List, Set
 from collections import defaultdict
 from player_stats import WinStats, PlayStats, PreFlopStats
+import itertools
 import json
 
 colorama.init()
@@ -43,6 +44,7 @@ class Evening:
     def __init__(self, username):
         self.username = username
         self.rounds = []
+        self.id_counter = 0
         self.players = {}
         self.historical_amounts = defaultdict(list)
 
@@ -53,9 +55,14 @@ class Evening:
         import matplotlib.pyplot as plt
 
         for player, round_amts in self.historical_amounts.items():
-            rounds, amts = list(zip(*round_amts))
+            rounds, amts = [x[0] for x in round_amts], [x[1] for x in round_amts]
+            cumsum = amts[0]
+            cumsum_amt = [cumsum]
+            for x in amts[1:]:
+                cumsum += x
+                cumsum_amt.append(cumsum)
             player_name = player.split("@")[0].strip()
-            plt.plot(rounds, amts, label=player_name)
+            plt.plot(rounds, cumsum_amt, label=player_name, alpha=0.6)
 
         plt.xlabel("Round #")
         plt.ylabel("# of Chips")
@@ -82,23 +89,29 @@ class Evening:
         self._record_amounts()
 
     def _record_amounts(self):
-        for player, amt in self.players.items():
-            self.historical_amounts[player].append((len(self.rounds), amt))
+        pass
 
     def _update_amounts(self):
         last_round = self.rounds[-1]
+        round_id = self.id_counter
+        self.id_counter += 1
+
         spent = last_round.money_spent()
         pot_size = sum(spent.values())
+
         for user, amount in spent.items():
             self.players[user] -= amount
+            self.historical_amounts[user].append([round_id, -amount])
 
         if len(last_round.winners) == 1:
             for (winner_name, hand, amt, _) in last_round.winners:
                 self.players[winner_name] += pot_size
+                self.historical_amounts[winner_name][-1][-1] += pot_size
+
         elif len(last_round.winners) > 1:
             for (winner_name, hand, amt, _) in last_round.winners:
                 self.players[winner_name] += amt
-
+                self.historical_amounts[winner_name][-1][-1] += amt
 
 class Action:
     def __init__(self, player, action_name, amount, time_stamp):
@@ -505,7 +518,7 @@ def compute_stats(evening, args):
     play_stats.print()
     win_stats.print()
     preflop_stats.print()
-    # evening.plot_progression()
+    evening.plot_progression()
 
 
 def main():
